@@ -734,13 +734,16 @@
   };
 
   // Generator function to create the findIndex and findLastIndex functions
+  //根据方向生成findIndex以及findLastIndex函数
   var createPredicateIndexFinder = function(dir) {
     return function(array, predicate, context) {
       predicate = cb(predicate, context);
       var length = getLength(array);
       var index = dir > 0 ? 0 : length - 1;
       for (; index >= 0 && index < length; index += dir) {
-        if (predicate(array[index], index, array)) return index;
+        if (predicate(array[index], index, array)) {
+          return index;
+        }
       }
       return -1;
     };
@@ -752,18 +755,24 @@
 
   // Use a comparator function to figure out the smallest index at which
   // an object should be inserted so as to maintain order. Uses binary search.
+  //得到obj应该插入的位置，有个局限性，只能从头到尾，不能指定头尾
   _.sortedIndex = function(array, obj, iteratee, context) {
     iteratee = cb(iteratee, context, 1);
     var value = iteratee(obj);
     var low = 0, high = getLength(array);
     while (low < high) {
       var mid = Math.floor((low + high) / 2);
-      if (iteratee(array[mid]) < value) low = mid + 1; else high = mid;
+      if (iteratee(array[mid]) < value) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
     }
     return low;
   };
 
   // Generator function to create the indexOf and lastIndexOf functions
+  // indexOf:idx是是否排序或者为起始位置，已排序的话就无法传起始位置，lastIndexOf的idx是起始位置
   var createIndexFinder = function(dir, predicateFind, sortedIndex) {
     return function(array, item, idx) {
       var i = 0, length = getLength(array);
@@ -777,12 +786,15 @@
         idx = sortedIndex(array, item);
         return array[idx] === item ? idx : -1;
       }
+      //item是NaN
       if (item !== item) {
         idx = predicateFind(slice.call(array, i, length), _.isNaN);
         return idx >= 0 ? idx + i : -1;
       }
       for (idx = dir > 0 ? i : length - 1; idx >= 0 && idx < length; idx += dir) {
-        if (array[idx] === item) return idx;
+        if (array[idx] === item) {
+          return idx;
+        }
       }
       return -1;
     };
@@ -798,15 +810,18 @@
   // Generate an integer Array containing an arithmetic progression. A port of
   // the native Python `range()` function. See
   // [the Python documentation](http://docs.python.org/library/functions.html#range).
+  //返回一个固定间隔区间数组
   _.range = function(start, stop, step) {
+    //未传stop
     if (stop == null) {
       stop = start || 0;
       start = 0;
     }
+
     step = step || 1;
 
     var length = Math.max(Math.ceil((stop - start) / step), 0);
-    var range = Array(length);
+    var range = new Array(length);
 
     for (var idx = 0; idx < length; idx++, start += step) {
       range[idx] = start;
@@ -818,7 +833,9 @@
   // Split an **array** into several arrays containing **count** or less elements
   // of initial array
   _.chunk = function(array, count) {
-    if (count == null || count < 1) return [];
+    if (count == null || count < 1) {
+      return [];
+    }
 
     var result = [];
     var i = 0, length = array.length;
@@ -834,18 +851,25 @@
   // Determines whether to execute a function as a constructor
   // or a normal function with the provided arguments
   var executeBound = function(sourceFunc, boundFunc, context, callingContext, args) {
-    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
+    if (!(callingContext instanceof boundFunc)) {
+      return sourceFunc.apply(context, args);
+    }
     var self = baseCreate(sourceFunc.prototype);
     var result = sourceFunc.apply(self, args);
-    if (_.isObject(result)) return result;
+    if (_.isObject(result)) {
+      return result;
+    }
     return self;
   };
 
   // Create a function bound to a given object (assigning `this`, and arguments,
   // optionally). Delegates to **ECMAScript 5**'s native `Function.bind` if
   // available.
+  //绑定this对象以及部分args
   _.bind = restArgs(function(func, context, args) {
-    if (!_.isFunction(func)) throw new TypeError('Bind must be called on a function');
+    if (!_.isFunction(func)) {
+      throw new TypeError('Bind must be called on a function');
+    }
     var bound = restArgs(function(callArgs) {
       return executeBound(func, bound, context, this, args.concat(callArgs));
     });
@@ -860,7 +884,7 @@
     var placeholder = _.partial.placeholder;
     var bound = function() {
       var position = 0, length = boundArgs.length;
-      var args = Array(length);
+      var args = new Array(length);
       for (var i = 0; i < length; i++) {
         args[i] = boundArgs[i] === placeholder ? arguments[position++] : boundArgs[i];
       }
