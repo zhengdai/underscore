@@ -850,6 +850,7 @@
 
   // Determines whether to execute a function as a constructor
   // or a normal function with the provided arguments
+  //根据callingContext与boundFunc的关系来决定是以普通方式调用sourceFunc还是构造函数方式调用
   var executeBound = function(sourceFunc, boundFunc, context, callingContext, args) {
     if (!(callingContext instanceof boundFunc)) {
       return sourceFunc.apply(context, args);
@@ -880,6 +881,7 @@
   // arguments pre-filled, without changing its dynamic `this` context. _ acts
   // as a placeholder by default, allowing any combination of arguments to be
   // pre-filled. Set `_.partial.placeholder` for a custom placeholder argument.
+  //指定部分参数返回新的函数
   _.partial = restArgs(function(func, boundArgs) {
     var placeholder = _.partial.placeholder;
     var bound = function() {
@@ -899,8 +901,9 @@
   // Bind a number of an object's methods to that object. Remaining arguments
   // are the method names to be bound. Useful for ensuring that all callbacks
   // defined on an object belong to it.
+  //将一个对象的传入方法的this对象永远绑定为这个对象，这样如果把某个方法拿出来赋值给其他变量调用的时候this对象还是指向原来的那个对象
   _.bindAll = restArgs(function(obj, keys) {
-    keys = flatten(keys, false, false);
+    keys = flatten(keys, false, false);//完全扁平化
     var index = keys.length;
     if (index < 1) throw new Error('bindAll must be passed function names');
     while (index--) {
@@ -910,11 +913,14 @@
   });
 
   // Memoize an expensive function by storing its results.
+  //缓存结果函数
   _.memoize = function(func, hasher) {
     var memoize = function(key) {
       var cache = memoize.cache;
       var address = '' + (hasher ? hasher.apply(this, arguments) : key);
-      if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);
+      if (!_.has(cache, address)) {
+        cache[address] = func.apply(this, arguments);
+      }
       return cache[address];
     };
     memoize.cache = {};
@@ -931,6 +937,7 @@
 
   // Defers a function, scheduling it to run after the current call stack has
   // cleared.
+  //延迟调用
   _.defer = _.partial(_.delay, _, 1);
 
   // Returns a function, that, when invoked, will only be triggered at most once
@@ -944,14 +951,18 @@
     var previous = 0;
     if (!options) options = {};
     var later = function() {
-      previous = options.leading === false ? 0 : _.now();
+      previous = options.leading === false ? 0 : _.now();//上次调用时间
       timeout = null;
       result = func.apply(context, args);
-      if (!timeout) context = args = null;
+      if (!timeout) {
+        context = args = null;
+      }
     };
     return function() {
       var now = _.now();
-      if (!previous && options.leading === false) previous = now;
+      if (!previous && options.leading === false) {
+        previous = now;
+      }
       var remaining = wait - (now - previous);
       context = this;
       args = arguments;
@@ -986,7 +997,9 @@
         timeout = null;
         if (!immediate) {
           result = func.apply(context, args);
-          if (!timeout) context = args = null;
+          if (!timeout) {
+            context = args = null;
+          }
         }
       }
     };
@@ -996,7 +1009,9 @@
       args = arguments;
       timestamp = _.now();
       var callNow = immediate && !timeout;
-      if (!timeout) timeout = setTimeout(later, wait);
+      if (!timeout) {
+        timeout = setTimeout(later, wait);
+      }
       if (callNow) {
         result = func.apply(context, args);
         context = args = null;
@@ -1014,6 +1029,7 @@
   };
 
   // Returns a negated version of the passed-in predicate.
+  //对predicate函数取反的函数
   _.negate = function(predicate) {
     return function() {
       return !predicate.apply(this, arguments);
@@ -1022,18 +1038,22 @@
 
   // Returns a function that is the composition of a list of functions, each
   // consuming the return value of the function that follows.
+  //组合调用一系列函数
   _.compose = function() {
     var args = arguments;
     var start = args.length - 1;
     return function() {
       var i = start;
       var result = args[start].apply(this, arguments);
-      while (i--) result = args[i].call(this, result);
+      while (i--) {
+        result = args[i].call(this, result);
+      }
       return result;
     };
   };
 
   // Returns a function that will only be executed on and after the Nth call.
+  //第N次才会真正调用
   _.after = function(times, func) {
     return function() {
       if (--times < 1) {
@@ -1043,6 +1063,7 @@
   };
 
   // Returns a function that will only be executed up to (but not including) the Nth call.
+  //至多调用N-1次
   _.before = function(times, func) {
     var memo;
     return function() {
@@ -1066,7 +1087,7 @@
   // Keys in IE < 9 that won't be iterated by `for key in ...` and thus missed.
   var hasEnumBug = !{toString: null}.propertyIsEnumerable('toString');
   var nonEnumerableProps = ['valueOf', 'isPrototypeOf', 'toString',
-                      'propertyIsEnumerable', 'hasOwnProperty', 'toLocaleString'];
+                      'propertyIsEnumerable', 'hasOwnProperty', 'toLocaleString'];//可能被自身改写，但是IE9以下还是不能枚举
 
   var collectNonEnumProps = function(obj, keys) {
     var nonEnumIdx = nonEnumerableProps.length;
@@ -1075,7 +1096,9 @@
 
     // Constructor is a special case.
     var prop = 'constructor';
-    if (_.has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);
+    if (_.has(obj, prop) && !_.contains(keys, prop)) {
+      keys.push(prop);
+    }
 
     while (nonEnumIdx--) {
       prop = nonEnumerableProps[nonEnumIdx];
@@ -1086,24 +1109,42 @@
   };
 
   // Retrieve the names of an object's own properties.
-  // Delegates to **ECMAScript 5**'s native `Object.keys`
+  // Delegates to **ECMAScript 5**'s native `Object.keys
+  // 对象自身的`
   _.keys = function(obj) {
-    if (!_.isObject(obj)) return [];
-    if (nativeKeys) return nativeKeys(obj);
+    if (!_.isObject(obj)) {
+      return [];
+    }
+    if (nativeKeys) {
+      return nativeKeys(obj);
+    }
     var keys = [];
-    for (var key in obj) if (_.has(obj, key)) keys.push(key);
+    for (var key in obj) {
+      if (_.has(obj, key)) {
+        keys.push(key);
+      }
+    }
     // Ahem, IE < 9.
-    if (hasEnumBug) collectNonEnumProps(obj, keys);
+    if (hasEnumBug) {
+      collectNonEnumProps(obj, keys);
+    }
     return keys;
   };
 
   // Retrieve all the property names of an object.
+  //对象所有的，包括继承的
   _.allKeys = function(obj) {
-    if (!_.isObject(obj)) return [];
+    if (!_.isObject(obj)) {
+      return [];
+    }
     var keys = [];
-    for (var key in obj) keys.push(key);
+    for (var key in obj) {
+      keys.push(key);
+    }
     // Ahem, IE < 9.
-    if (hasEnumBug) collectNonEnumProps(obj, keys);
+    if (hasEnumBug) {
+      collectNonEnumProps(obj, keys);
+    }
     return keys;
   };
 
@@ -1111,7 +1152,7 @@
   _.values = function(obj) {
     var keys = _.keys(obj);
     var length = keys.length;
-    var values = Array(length);
+    var values = new Array(length);
     for (var i = 0; i < length; i++) {
       values[i] = obj[keys[i]];
     }
@@ -1120,6 +1161,7 @@
 
   // Returns the results of applying the iteratee to each element of the object
   // In contrast to _.map it returns an object
+  //返回对象
   _.mapObject = function(obj, iteratee, context) {
     iteratee = cb(iteratee, context);
     var keys = _.keys(obj),
@@ -1136,7 +1178,7 @@
   _.pairs = function(obj) {
     var keys = _.keys(obj);
     var length = keys.length;
-    var pairs = Array(length);
+    var pairs = new Array(length);
     for (var i = 0; i < length; i++) {
       pairs[i] = [keys[i], obj[keys[i]]];
     }
@@ -1155,10 +1197,13 @@
 
   // Return a sorted list of the function names available on the object.
   // Aliased as `methods`
+  //得到一个对象上是函数的属性数组
   _.functions = _.methods = function(obj) {
     var names = [];
     for (var key in obj) {
-      if (_.isFunction(obj[key])) names.push(key);
+      if (_.isFunction(obj[key])) {
+        names.push(key);
+      }
     }
     return names.sort();
   };
@@ -1168,14 +1213,19 @@
     return function(obj) {
       var length = arguments.length;
       if (defaults) obj = Object(obj);
-      if (length < 2 || obj == null) return obj;
+      if (length < 2 || obj == null) {
+        return obj;
+      }
       for (var index = 1; index < length; index++) {
         var source = arguments[index],
             keys = keysFunc(source),
             l = keys.length;
         for (var i = 0; i < l; i++) {
           var key = keys[i];
-          if (!defaults || obj[key] === void 0) obj[key] = source[key];
+          //defaults为true时，属性为undefined才填充
+          if (!defaults || obj[key] === void 0) {
+            obj[key] = source[key];
+          }
         }
       }
       return obj;
@@ -1195,7 +1245,9 @@
     var keys = _.keys(obj), key;
     for (var i = 0, length = keys.length; i < length; i++) {
       key = keys[i];
-      if (predicate(obj[key], key, obj)) return key;
+      if (predicate(obj[key], key, obj)) {
+        return key;
+      }
     }
   };
 
@@ -1205,6 +1257,8 @@
   };
 
   // Return a copy of the object only containing the whitelisted properties.
+  //一种情况是传多个key参数
+  //一种情况是传一个函数来判断某个key是不是应该出现在result对象内
   _.pick = restArgs(function(obj, keys) {
     var result = {}, iteratee = keys[0];
     if (obj == null) return result;
@@ -1219,12 +1273,15 @@
     for (var i = 0, length = keys.length; i < length; i++) {
       var key = keys[i];
       var value = obj[key];
-      if (iteratee(value, key, obj)) result[key] = value;
+      if (iteratee(value, key, obj)) {
+        result[key] = value;
+      }
     }
     return result;
   });
 
    // Return a copy of the object without the blacklisted properties.
+  //与pick相反
   _.omit = restArgs(function(obj, keys) {
     var iteratee = keys[0], context;
     if (_.isFunction(iteratee)) {
@@ -1253,13 +1310,16 @@
 
   // Create a (shallow-cloned) duplicate of an object.
   _.clone = function(obj) {
-    if (!_.isObject(obj)) return obj;
+    if (!_.isObject(obj)) {
+      return obj;
+    }
     return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
   };
 
   // Invokes interceptor with the obj, and then returns obj.
   // The primary purpose of this method is to "tap into" a method chain, in
   // order to perform operations on intermediate results within the chain.
+  //方便链式调用
   _.tap = function(obj, interceptor) {
     interceptor(obj);
     return obj;
@@ -1290,18 +1350,26 @@
     if (a !== a) return b !== b;
     // Exhaust primitive checks
     var type = typeof a;
-    if (type !== 'function' && type !== 'object' && typeof b !== 'object') return false;
+    if (type !== 'function' && type !== 'object' && typeof b !== 'object') {
+      return false;
+    }
     return deepEq(a, b, aStack, bStack);
   };
 
   // Internal recursive comparison function for `isEqual`.
   deepEq = function(a, b, aStack, bStack) {
     // Unwrap any wrapped objects.
-    if (a instanceof _) a = a._wrapped;
-    if (b instanceof _) b = b._wrapped;
+    if (a instanceof _) {
+      a = a._wrapped;
+    }
+    if (b instanceof _) {
+      b = b._wrapped;
+    }
     // Compare `[[Class]]` names.
     var className = toString.call(a);
-    if (className !== toString.call(b)) return false;
+    if (className !== toString.call(b)) {
+      return false;
+    }
     switch (className) {
       // Strings, numbers, regular expressions, dates, and booleans are compared by value.
       case '[object RegExp]':
@@ -1391,7 +1459,9 @@
   // An "empty" object has no enumerable own-properties.
   _.isEmpty = function(obj) {
     if (obj == null) return true;
-    if (isArrayLike(obj) && (_.isArray(obj) || _.isString(obj) || _.isArguments(obj))) return obj.length === 0;
+    if (isArrayLike(obj) && (_.isArray(obj) || _.isString(obj) || _.isArguments(obj))) {
+      return obj.length === 0;
+    }
     return _.keys(obj).length === 0;
   };
 
