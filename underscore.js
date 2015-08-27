@@ -1479,7 +1479,7 @@
   // Is a given variable an object?
   _.isObject = function(obj) {
     var type = typeof obj;
-    return type === 'function' || type === 'object' && !!obj;
+    return type === 'function' || type === 'object' && !!obj;//防止null的情况
   };
 
   // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp, isError.
@@ -1491,6 +1491,7 @@
 
   // Define a fallback version of the method in browsers (ahem, IE < 9), where
   // there isn't any inspectable "Arguments" type.
+  //低版本浏览器可能没有Arguments类型，这时候需要靠是否有callee属性来判断
   if (!_.isArguments(arguments)) {
     _.isArguments = function(obj) {
       return _.has(obj, 'callee');
